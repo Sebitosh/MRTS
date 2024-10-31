@@ -1,2 +1,2 @@
 
-Include /home/airween/src/MRTS/rules/*.conf
+Include /home/airween/src/MRTS/generated/rules/*.conf
