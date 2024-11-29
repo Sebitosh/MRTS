@@ -338,11 +338,25 @@ As you can see there are few command line arguments.
 * `-t` - export test directory where tests will be written
 
 ```bash
-$ cd /util/generate_rules
-$ ./generate-rules.py -r data/*.yaml -e ../../rules/ -t ../../tests/regression/tests/
+$ ./mrts/generate-rules.py -r config_tests/*.yaml -e generated/rules/ -t generated/tests/regression/tests/
 ```
 
-If you finished the generation process, you can download `go-ftw` and run it.
+Once generated, rules need to be added to your ModSecurity configuration file.
+
+Change `m̀rts.load` with your absolute path to the generated rules:
+```
+Include /Absolute/Path/To/MRTS/generated/rules/*.conf
+```
+In `modsecurity.conf` include your absolute path to `mrts.load`:
+
+```
+...
+
+Include /Absolute/Path/To/MRTS/mrts.load
+```
+Don't forget to restart your server each time you generate new rules.
+
+If you finished the generation and configuration process, you can download `go-ftw` and run it.
 
 For more info about `go-ftw` please see its [README](https://github.com/coreruleset/go-ftw/) or CRS's [excellent documentation](https://coreruleset.org/docs/development/testing/).
 
@@ -359,30 +373,30 @@ logtype:
   timeformat: 'ddd MMM DD HH:mm:ss.S YYYY'
 
 
-$ ./go-ftw run --config .ftw.apache-mrts.yaml -d ../coreruleset/tests/regression/tests/
-🛠️  Starting tests!
+$ ./go-ftw run --config .ftw.apache-mrts.yaml -d generated/tests/regression/tests/
+🛠️ Starting tests!
 🚀 Running go-ftw!
 👉 executing tests in file MRTS_002_ARGS.yaml
-	running 100000-1: ✔ passed in 12.68614ms (RTT 54.816458ms)
-	running 100000-2: ✔ passed in 10.743204ms (RTT 54.584567ms)
-	running 100000-3: ✔ passed in 12.3017ms (RTT 55.248479ms)
-	running 100000-4: ✔ passed in 11.771936ms (RTT 54.533389ms)
+	running 2-1: ✔ passed in 12.842548ms (RTT 54.970028ms)
+	running 2-2: ✔ passed in 12.049459ms (RTT 54.891019ms)
+	running 2-3: ✔ passed in 10.790834ms (RTT 53.365412ms)
+	running 2-4: ✔ passed in 10.695786ms (RTT 53.515826ms)
 👉 executing tests in file MRTS_002_ARGS.yaml
-	running 100001-1: ✔ passed in 9.864029ms (RTT 53.313677ms)
-	running 100001-2: ✔ passed in 9.993946ms (RTT 53.594318ms)
-	running 100001-3: ✔ passed in 9.412108ms (RTT 53.388277ms)
-	running 100001-4: ✔ passed in 9.435627ms (RTT 53.400019ms)
+	running 2-1: ✔ passed in 8.615306ms (RTT 52.334647ms)
+	running 2-2: ✔ passed in 7.64326ms (RTT 52.301444ms)
+	running 2-3: ✔ passed in 8.353395ms (RTT 52.289161ms)
+	running 2-4: ✔ passed in 8.704224ms (RTT 52.993254ms)
 ...
 ```
 
 ## Check the state of covered variables
 
-When you finished the build process, you can check which variables (and later the othe entities) are covered by the generated rule set.
+When you finished the build process, you can check which variables (and later the other entities) are covered by the generated rule set.
 
 You should type:
 
 ```bash
-$ cd util/collect_rules
+$ cd mrts/collect_rules
 
 $ ./collect-rules.py 
 usage: collect-rules.py [-h] -r [/path/to/mrts/*.conf ...]
@@ -392,23 +406,27 @@ collect-rules.py: error: the following arguments are required: -r/--rules
 As you can see here are also a mandatory argument, the path of generated rules.
 
 ```bash
-$ ./collect-rules.py -r ../../rules/*.conf
-Config file: ../../rules/MRTS_001_INIT.conf
+$ ./collect-rules.py -r ../../generated/rules/*.conf
+Config file: ../../generated/rules/MRTS_001_INIT.conf
  Parsing ok.
-Config file: ../../rules/MRTS_002_ARGS.conf
+Config file: ../../generated/rules/MRTS_002_ARGS.conf
  Parsing ok.
-Config file: ../../rules/MRTS_003_ARGS_COMBINED_SIZE.conf
+Config file: ../../generated/rules/MRTS_003_ARGS_COMBINED_SIZE.conf
  Parsing ok.
-Config file: ../../rules/MRTS_110_XML.conf
+Config file: ../../generated/rules/MRTS_004_ARGS_GET.conf
+ Parsing ok.
+Config file: ../../generated/rules/MRTS_005_ARGS_GET_NAMES.conf
+ Parsing ok.
+Config file: ../../generated/rules/MRTS_110_XML.conf
  Parsing ok.
 
 =====
-Covered TARGETs: REQUEST_HEADERS, ARGS, ARGS_COMBINED_SIZE, XML
+Covered TARGETs: REQUEST_HEADERS, ARGS, ARGS_COMBINED_SIZE, ARGS_GET, ARGS_GET_NAMES, XML
 
-UNCOVERED TARGETs: ARGS_GET, ARGS_GET_NAMES, ARGS_NAMES, ...
+UNCOVERED TARGETs: ARGS_NAMES, ARGS_POST, ARGS_POST_NAMES, ...
 ```
 
-Based on the output, we actually covered 4 targets, so there are lot of works to cover all variables.
+Based on the output, we actually covered 6 targets, so there are lot of works to cover all variables.
 
 
 
