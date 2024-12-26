@@ -97,24 +97,24 @@ global:
 
 You can create one or more template which can be used for generated rules. A template object has two other named objects: `name` and `template`.
 
-`name` must be a unique name, and `template` is a text with the rule definition. This definition can contain macros - see [macros][#macros] section.
+`name` must be a unique name, and `template` is a text with the rule definition. This definition can contain macros - see [macros](#macros) section.
 
 An example for `templates`:
 
 ```yaml
   - name: "SecRule for TARGETS"
     template: |
-      SecRule $TARGET "$OPERATOR $OPARG" \
-          "id:$CURRID,\
-          phase:$PHASE,\
+      SecRule ${TARGET}$ "${OPERATOR}$ ${OPARG}$" \
+          "id:${CURRID}$,\
+          phase:${PHASE}$,\
           deny,\
           t:none,\
           log,\
-          msg:'%{MATCHED_VAR_NAME} was caught in phase:$PHASE',\
-          ver:'$VERSION'"
+          msg:'%{MATCHED_VAR_NAME} was caught in phase:${PHASE}$',\
+          ver:'${VERSION}$'"
 ```
 
-As you can see the teplate macros begins with the dollar sign (`$`).
+As you can see the template macros are delimited by `${...}$`.
 
 ### macros
 
@@ -122,12 +122,12 @@ Marcos are coming from the definition. That can be from the unique definition or
 
 Avaliable macros:
 
-* `$TARGET` the variable name when you want to check the SecRule's variable
-* `$OPERATOR` is the used operator; it must be placed with the leading `@`, eg. `@rx`.
-* `$OPARG` is the argument of the operator in the rule
-* `$CURRID` is the incremented `id`, which guaranties that every generated rule will have a unique `id`
-* `$PHASE` is the current phase in the list that you define in the definition file (see later its syntax)
-* `$VERSION` is the `VERSION`, see above
+* `${TARGET}$` the variable name when you want to check the SecRule's variable
+* `${OPERATOR}$` is the used operator; it must be placed with the leading `@`, eg. `@rx`.
+* `${OPARG}$` is the argument of the operator in the rule
+* `${CURRID}$` is the incremented `id`, which guaranties that every generated rule will have a unique `id`
+* `${PHASE}$` is the current phase in the list that you define in the definition file (see later its syntax)
+* `${VERSION}$` is the `VERSION`, see above
 
 Please note that `%{MATCHED_VAR_NAME}` is not a tool macro, but the ModSecurity's macro. You can use them where you want.
 

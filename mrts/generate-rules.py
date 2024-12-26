@@ -51,7 +51,7 @@ class RuleGenerator(object):
         self.content          = ""
         self.testcontent      = {}
 
-        self.re_tplvars  = re.compile(r"""\$[^ \n\t$,'"]*""")
+        self.re_tplvars  = re.compile(r"""\$\{[^ \n\t$,'"]*\}\$""")
 
         self.testdict         = {
             'header': {
@@ -163,10 +163,10 @@ class RuleGenerator(object):
 
         # get the template vars; 'colkey' is not a tpl variable, but
         # needs for TARGET:colkey variables
-        tplvars = [t.replace("$", "").lower() for t in self.re_tplvars.findall(tpl)]
+        tplvars = [t.replace("${", "").replace("}$", "").lower() for t in self.re_tplvars.findall(tpl)]
         tplvars.append('colkey')
 
-        ruletpl = string.Template(tpl)
+        ruletpl = ComplexSeparatorTemplate(tpl)
 
         # build a dict for template vars
         tpldict = {}
@@ -314,6 +314,19 @@ class RuleGenerator(object):
             aidx += 1
         objacts = ",\\\n".join(objacts)
         return objacts + "\""
+
+
+class ComplexSeparatorTemplate(string.Template):
+    """Class to replace the default delimiter to ${...}$ for variables in templates"""
+    pattern = r'''
+    \${(?:
+       (?P<escaped>\$) |               
+       (?P<named>[^ \n\t$,'"]*)\}\$ |    
+       \b\B(?P<braced>) |             
+       (?P<invalid>)                  
+    )
+    '''
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MRTS rule generate tool")
