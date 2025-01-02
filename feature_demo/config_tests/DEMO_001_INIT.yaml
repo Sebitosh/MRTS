@@ -1,5 +1,5 @@
 target: null
-rulefile: DEMO_MRTS_001_INIT.conf
+rulefile: DEMO_001_INIT.conf
 testfile: null
 objects:
 - object: secaction

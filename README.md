@@ -268,15 +268,15 @@ The above example used with this template:
 
 ```yaml
     template: |
-      SecRule $TARGET "$OPERATOR $OPARG" \
-          "id:$CURRID,\
-          phase:$PHASE,\
+      SecRule ${TARGET}$ "${OPERATOR}$ ${OPARG}$" \
+          "id:${CURRID}$,\
+          phase:${PHASE}$,\
           deny,\
           t:none,\
           log,\
-          msg:'%{MATCHED_VAR_NAME} was caught in phase:$PHASE',\
-          ver:'$VERSION',\
-          $ACTIONS"
+          msg:'%{MATCHED_VAR_NAME} was caught in phase:${PHASE}$',\
+          ver:'${VERSION}$',\
+          ${ACTIONS}$"
 ```
 
 would produce the following rules:

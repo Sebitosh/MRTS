@@ -250,7 +250,8 @@ class RuleGenerator(object):
                                                         for h in test['test']['input']['headers']:
                                                             item['stages'][0]['input']['headers'][h['name']] = h['value']
                                                     if 'encoded_request' in test['test']['input']:
-                                                        item['stages'][0]['input']['encoded_request'] = test['test']['input']['encoded_request']item['stages'][0]['output']['log']['expect_ids'].append(self.currid)
+                                                        item['stages'][0]['input']['encoded_request'] = test['test']['input']['encoded_request']
+                                                item['stages'][0]['output']['log']['expect_ids'].append(self.currid)
                                                 self.testcontent['tests'].append(item)
                                                 testcnt += 1
                                 # if no testdata
