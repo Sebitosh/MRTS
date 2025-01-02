@@ -128,12 +128,13 @@ Avaliable macros:
 * `${CURRID}$` is the incremented `id`, which guaranties that every generated rule will have a unique `id`
 * `${PHASE}$` is the current phase in the list that you define in the definition file (see later its syntax)
 * `${VERSION}$` is the `VERSION`, see above
+* `${ACTIONS}$` is the actions you want in the rule 
 
 Please note that `%{MATCHED_VAR_NAME}` is not a tool macro, but the ModSecurity's macro. You can use them where you want.
 
 ## Definition
 
-In a definition file there also many keywords are avaliable. See an example then expand the meanings:
+In a definition file there also many keywords are available. See an example then expand the meanings:
 
 ```yaml
 target: null
@@ -174,6 +175,9 @@ operator:
 - '@lt'
 oparg:
 - 2
+actions:
+  - action:
+      - status:404
 testdata:
   phase_methods:
     1: get
@@ -241,16 +245,75 @@ SecRule ARGS:/^arg_.*$/
 ```
 * `operator` - list of used operators
 * `oparg` - list of used operator arguments
+* `actions` - list of used actions - see [actions](#actions) section 
 * `testdata` - list of expected test cases - see [testdata](#testdata) section
+
+### actions
+
+`actions` are defined for the `$ACTIONS` macro. See this example:
+
+```yaml
+actions:
+  - action:
+      - setvar:ABC=1
+      - auditlog
+      - status:400
+  - action:
+      - setvar:XYZ=2
+      - status:500
+```
+Each `action` field contains a list of actions to be included in a SecRule/SecAction. Every `action` list will be used to generate different combinations of rules.
+
+The above example used with this template:
+
+```yaml
+    template: |
+      SecRule $TARGET "$OPERATOR $OPARG" \
+          "id:$CURRID,\
+          phase:$PHASE,\
+          deny,\
+          t:none,\
+          log,\
+          msg:'%{MATCHED_VAR_NAME} was caught in phase:$PHASE',\
+          ver:'$VERSION',\
+          $ACTIONS"
+```
+
+would produce the following rules:
+
+```yaml
+SecRule ARGS "@contains attack" \
+    "id:100000,\
+    phase:2,\
+    deny,\
+    t:none,\
+    log,\
+    msg:'%{MATCHED_VAR_NAME} was caught in phase:2',\
+    ver:'MRTS/0.1',\
+    setvar:ABC=1,\
+    auditlog,\
+    status:400"
+
+SecRule ARGS "@contains attack" \
+    "id:100001,\
+    phase:2,\
+    deny,\
+    t:none,\
+    log,\
+    msg:'%{MATCHED_VAR_NAME} was caught in phase:2',\
+    ver:'MRTS/0.1',\
+    setvar:XYZ=2,\
+    status:500"
+```
 
 ### testdata
 
 `testdata` is a keyword in the definition file. Here you can list the necessary test case definitions. A testdata item can contain two member:
 
-* `phase_methods` - where you can owerwrite the [default_tests_phase_methods](#default_tests_phase_methods) - this keyword is optional
+* `phase_methods` - where you can overwrite the [default_tests_phase_methods](#default_tests_phase_methods) - this keyword is optional
 * `targets` - here you can define the posible collection keys that can occurres in generated rules
 
-#### test case defition
+#### test case definition
 
 Let's see a test case definition example:
 
@@ -319,7 +382,7 @@ This will generate one test for empty collection key and one for the collection 
               value: application/xml
 ```
 
-This will genreate a test case for collection key `/*` (usually used for `XML`), the data will be the given `XML` string, and the test add an extra header for `go-ftw` test.
+This will generate a test case for collection key `/*` (usually used for `XML`), the data will be the given `XML` string, and the test add an extra header for `go-ftw` test.
 
 #### Encoded request
 
