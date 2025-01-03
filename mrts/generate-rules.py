@@ -32,6 +32,7 @@ class RuleGenerator(object):
             'oparg'        : "attack",
             'phase'        : [1,2,3,4],
             'actions'      : [],
+            'directives'   : [],
             'phase_methods': {}
         }
         self.default_test_phase_methods = {
@@ -185,34 +186,46 @@ class RuleGenerator(object):
         if not actions_defined:
             tpldict['actions'] = [None]  # dummy but iterable value
 
+        # optional directives macro
+        directives_defined = 'directives' in tpldict
+        if not directives_defined:
+            tpldict['directives'] = [None]  # dummy but iterable
+
         # iterate loops through possible combinations of arguments
         # mandatory arguments are 'colkey', 'operator', 'oparg' and 'phase'
-        # optional arguments are 'actions'
-        # this 5 loop produces the combinations
-        for action in tpldict['actions']:
-            for c in tpldict['colkey']:
-                for op in tpldict['operator']:
-                    for oparg in tpldict['oparg']:
-                        for phase in tpldict['phase']:
-                            tdict = copy.deepcopy(tpldict)
-                            if len(c) > 1:
-                                tdict['target'] = "|".join(["%s:%s" % (tpldict['target'], ck) for ck in c])
-                            elif len(c) == 1 and c[0] != '':
-                                tdict['target'] = "%s:%s" % (tpldict['target'], c[0])
-                            else:
-                                tdict['target'] = "%s" % (tpldict['target'])
-                            tdict['operator'] = op
-                            tdict['oparg'] = oparg
-                            tdict['phase'] = phase
-                            if actions_defined:
-                                tdict['actions'] = self.parseactions(action['action'])
+        # optional arguments are 'actions', 'directives'
+        # this 6 loop produces the combinations
+        for directive in tpldict['directives']:
+            for action in tpldict['actions']:
+                for c in tpldict['colkey']:
+                    for op in tpldict['operator']:
+                        for oparg in tpldict['oparg']:
+                            for phase in tpldict['phase']:
+                                tdict = copy.deepcopy(tpldict)
+                                if len(c) > 1:
+                                    tdict['target'] = "|".join(["%s:%s" % (tpldict['target'], ck) for ck in c])
+                                elif len(c) == 1 and c[0] != '':
+                                    tdict['target'] = "%s:%s" % (tpldict['target'], c[0])
+                                else:
+                                    tdict['target'] = "%s" % (tpldict['target'])
+                                tdict['operator'] = op
+                                tdict['oparg'] = oparg
+                                tdict['phase'] = phase
+                                if actions_defined:
+                                    tdict['actions'] = self.parseactions(action['action'])
+                                if directives_defined:
+                                    tdict['directives'] = self.parsedirectives(directive['directive'])
 
-                            td = {}
-                            for k in tdict:
-                                td[k.upper()] = tdict[k]
-                            td['CURRID'] = self.currid
-                            rule = ruletpl.substitute(**td) + "\n"
-                            self.content += rule
+                                td = {}
+                                for k in tdict:
+                                    td[k.upper()] = tdict[k]
+                                td['CURRID'] = self.currid
+                                rule = ruletpl.substitute(**td) + "\n"
+                                if directives_defined:
+                                    dirtpl = IncrementingIdTemplate(rule)
+                                    rule = dirtpl.substitute(**td)  # macros in directives
+                                    last_id = dirtpl.get_last_id()
+                                self.content += rule
 
                             # create a test if testfile was given
                             if self.current_confdata['testfile'] is not None:
@@ -263,7 +276,8 @@ class RuleGenerator(object):
                                     self.writetest(fname, self.testcontent)
                                     print("testfile written: %s" % (fname))
                                     self.testcontent = {}
-
+                            if directives_defined:
+                                self.currid = last_id  # next ids start
                             self.currid += 1
 
     def parseactions(self, action):
@@ -274,6 +288,17 @@ class RuleGenerator(object):
                 res += action[i]
             else:
                 res += action[i] + ",\\\n" + self.indent
+
+        return res
+
+    def parsedirectives(self, directive):
+        """From a list of directives as str, return a single str for inclusion in the template"""
+        res = ""
+        for i in range(len(directive)):
+            if i == len(directive) - 1:
+                res += directive[i]
+            else:
+                res += directive[i] + "\n"
 
         return res
 
@@ -350,6 +375,31 @@ class ComplexSeparatorTemplate(string.Template):
        (?P<invalid>)                  
     )
     '''
+
+
+
+class IncrementingIdTemplate(string.Template):
+    def __init__(self, template):
+        super().__init__(template)
+        self.last_id = 0
+
+    def get_last_id(self):
+        return self.last_id
+
+    def substitute(self, *args, **kwargs):
+        """Increments CURRID before each substitution for macros in directives"""
+        def incrementing_substitution(match):
+            var_name = match.group('named')
+            if var_name == 'CURRID':
+                kwargs['CURRID'] += 1
+                self.last_id = kwargs['CURRID']
+                return str(kwargs['CURRID'])
+            elif var_name in kwargs:
+                return str(kwargs[var_name])
+            else:
+                return match.group(0)
+
+        return self.pattern.sub(incrementing_substitution, self.template)
 
 
 if __name__ == "__main__":
