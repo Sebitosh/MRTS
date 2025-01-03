@@ -174,6 +174,9 @@ operator:
 - '@lt'
 oparg:
 - 2
+directives:
+  - directive: 
+      - SecAction "id:$CURRID,phase:$PHASE, pass, setenv:'123=abc'"
 testdata:
   phase_methods:
     1: get
@@ -241,7 +244,60 @@ SecRule ARGS:/^arg_.*$/
 ```
 * `operator` - list of used operators
 * `oparg` - list of used operator arguments
+* `directives` - list of used directives - see [directives](#directives) section
 * `testdata` - list of expected test cases - see [testdata](#testdata) section
+
+### directives
+
+`directives` are defined for the `$DIRECTIVES` macro. See this example:
+```yaml
+directives:
+  - directive:
+      - SecAction "id:$CURRID,phase:$PHASE, pass, setenv:'123=abc'"
+      - SecAction "id:$CURRID,phase:$PHASE, pass, setenv:'456=def'"
+  - directive:
+      - SecAction "id:$CURRID,phase:$PHASE, pass, setenv:'789=xyz'"
+```
+Each `directive` field contains a list of directives to be included in a template. Every `directive` list will be used to generate different combinations of rules. Macros are available and will be replaced with the current combination's value, except for macro `$CURRID` that is instead incremented at each substitution to guarantee a unique id per SecRule/SecAction.
+
+The above example used with this template:
+
+```yaml
+    template: |
+      SecRule $TARGET "$OPERATOR $OPARG" \
+          "id:$CURRID,\
+          phase:$PHASE,\
+          deny,\
+          t:none,\
+          log,\
+          msg:'%{MATCHED_VAR_NAME} was caught in phase:$PHASE',\
+          ver:'$VERSION'"
+
+      $DIRECTIVES
+```
+would produce the following rules:
+```yaml
+SecRule ARGS "@contains attack" \
+    "id:100000,\
+    phase:2,\
+    t:none,\
+    log,\
+    msg:'%{MATCHED_VAR_NAME} was caught in phase:2',\
+    ver:'MRTS/0.1'"
+
+SecAction "id:100001,phase:2, pass, setenv:'123=abc'"
+SecAction "id:100002,phase:2, pass, setenv:'456=def'"
+
+SecRule ARGS "@contains attack" \
+    "id:100003,\
+    phase:2,\
+    t:none,\
+    log,\
+    msg:'%{MATCHED_VAR_NAME} was caught in phase:2',\
+    ver:'MRTS/0.1'"
+
+SecAction "id:100004,phase:2, pass, setenv:'789=xyz'"
+```
 
 ### testdata
 
