@@ -129,6 +129,7 @@ Avaliable macros:
 * `${PHASE}$` is the current phase in the list that you define in the definition file (see later its syntax)
 * `${VERSION}$` is the `VERSION`, see above
 * `${ACTIONS}$` is the actions you want in the rule 
+* `${DIRECTIVES}$` is the additional directives you want next to the rule 
 
 Please note that `%{MATCHED_VAR_NAME}` is not a tool macro, but the ModSecurity's macro. You can use them where you want.
 
@@ -312,7 +313,7 @@ SecRule ARGS "@contains attack" \
 
 ### directives
 
-`directives` are defined for the `$DIRECTIVES` macro. See this example:
+`directives` are defined for the `${DIRECTIVES}$` macro. See this example:
 ```yaml
 directives:
   - directive:
@@ -327,16 +328,16 @@ The above example used with this template:
 
 ```yaml
     template: |
-      SecRule $TARGET "$OPERATOR $OPARG" \
-          "id:$CURRID,\
-          phase:$PHASE,\
+      SecRule ${TARGET}$ "$OPERATOR $OPARG" \
+          "id:${CURRID}$,\
+          phase:${PHASE}$,\
           deny,\
           t:none,\
           log,\
-          msg:'%{MATCHED_VAR_NAME} was caught in phase:$PHASE',\
-          ver:'$VERSION'"
+          msg:'%{MATCHED_VAR_NAME} was caught in phase:${PHASE}$',\
+          ver:'${VERSION}$'"
 
-      $DIRECTIVES
+      ${DIRECTIVES}$
 ```
 would produce the following rules:
 ```yaml
