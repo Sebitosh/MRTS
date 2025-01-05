@@ -264,7 +264,16 @@ class RuleGenerator(object):
                                                                 item['stages'][0]['input']['headers'][h['name']] = h['value']
                                                         if 'encoded_request' in test['test']['input']:
                                                             item['stages'][0]['input']['encoded_request'] = test['test']['input']['encoded_request']
-                                                    item['stages'][0]['output']['log']['expect_ids'].append(self.currid)
+                                                    # overwrite default output field
+                                                    if 'output' in test['test']:
+                                                        item['stages'][0]['output'] = test['test']['output']
+                                                        # if expect_ids is in rewrite, append the current rule id
+                                                        if 'log' in item['stages'][0]['output']:
+                                                            if 'expect_ids' in item['stages'][0]['output']['log']:
+                                                                item['stages'][0]['output']['log']['expect_ids'].append(self.currid)
+                                                    else:
+                                                        item['stages'][0]['output']['log']['expect_ids'].append(self.currid)
+
                                                     self.testcontent['tests'].append(item)
                                                     testcnt += 1
                                     # if no testdata
