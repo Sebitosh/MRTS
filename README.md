@@ -321,6 +321,19 @@ This will generate one test for empty collection key and one for the collection 
 
 This will genreate a test case for collection key `/*` (usually used for `XML`), the data will be the given `XML` string, and the test add an extra header for `go-ftw` test.
 
+#### Encoded request
+
+The field `input.encoded_request` allows defining a whole request encoded in base64. When running the test, the request is decoded into bytes and sent verbatim as the input for this test case. This allows sending malformed requests. Using this field will override all other fields related to the request.
+    
+```yaml
+    targets:
+        - target: ''
+          test:
+            data: null
+            input:
+              encoded_request: R0VUIC8gSFRUUC8xLjENCkhvc3Q6IGxvY2FsaG9zdA0KDQo=
+```
+
 ## Run the tool
 
 To generate the rules and their tests, run the tool:
