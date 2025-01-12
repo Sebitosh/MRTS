@@ -5,14 +5,14 @@ global:
   templates:
   - name: "SecRule for TARGETS"
     template: |
-      SecRule $TARGET "$OPERATOR $OPARG" \
-          "id:$CURRID,\
-          phase:$PHASE,\
+      SecRule ${TARGET}$ "${OPERATOR}$ ${OPARG}$" \
+          "id:${CURRID}$,\
+          phase:${PHASE}$,\
           deny,\
           t:none,\
           log,\
-          msg:'%{MATCHED_VAR_NAME} was caught in phase:$PHASE',\
-          ver:'$VERSION'"
+          msg:'%{MATCHED_VAR_NAME} was caught in phase:${PHASE}$',\
+          ver:'${VERSION}$'"
   default_tests_phase_methods:
   - 1: get
   - 2: post
