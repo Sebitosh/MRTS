@@ -5,10 +5,10 @@ meta:
   name: DEMO_004_DIRECTIVES.yaml
   description: Desc
 tests:
-- test_title: 100004-1
-  ruleid: 100004
+- test_title: 100005-1
+  ruleid: 100005
   test_id: 1
-  desc: 'Test case for rule 100004, #1'
+  desc: 'Test case for rule 100005, #1'
   stages:
   - description: Send request
     input:
@@ -26,4 +26,4 @@ tests:
     output:
       log:
         expect_ids:
-        - 100004
+        - 100005

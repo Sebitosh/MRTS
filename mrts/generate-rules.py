@@ -168,7 +168,7 @@ class RuleGenerator(object):
         tplvars = [t.replace("${", "").replace("}$", "").lower() for t in self.re_tplvars.findall(tpl)]
         tplvars.append('colkey')
 
-        ruletpl = ComplexSeparatorTemplate(tpl)
+        ruletpl = RuleGeneratorTemplate(tpl)
 
         # build a dict for template vars
         tpldict = {}
@@ -222,63 +222,63 @@ class RuleGenerator(object):
                                 td['CURRID'] = self.currid
                                 rule = ruletpl.substitute(**td) + "\n"
                                 if directives_defined:
-                                    dirtpl = IncrementingIdTemplate(rule)
-                                    rule = dirtpl.substitute(**td)  # macros in directives
+                                    dirtpl = RuleGeneratorTemplate(rule)
+                                    rule = dirtpl.directive_substitute(**td)
                                     last_id = dirtpl.get_last_id()
                                 self.content += rule
 
-                            # create a test if testfile was given
-                            if self.current_confdata['testfile'] is not None:
-                                testcnt = 1
-                                for ck in c:
-                                    if 'targets' in self.current_testdata:
-                                        for test in self.current_testdata['targets']:
-                                            if ck == '' or test['target'] == ck:
-                                                # first colkey which matches in the list
-                                                # create a test object
-                                                if self.testcontent == {}:
-                                                    self.testcontent = copy.deepcopy(self.testdict['header'])
-                                                    self.testcontent['meta']['name'] = self.current_confdata['testfile']
-                                                item = copy.deepcopy(self.testdict['item'])
-                                                item['test_title'] = "%d-%d" % (self.currid, testcnt)
-                                                item['ruleid'] = self.currid
-                                                item['test_id'] = testcnt
-                                                item['desc'] = "Test case for rule %d, #%d" % (self.currid, testcnt)
-                                                item['stages'][0]['description'] = "Send request"
-                                                item['stages'][0]['input']['method'] = self.current_confdata['phase_methods'][phase].upper()
-                                                if self.current_testdata['phase_methods'][phase].lower() == "post":
-                                                    if isinstance(test['test']['data'], dict):
-                                                        ik, iv = list(test['test']['data'].items())[0]
-                                                        item['stages'][0]['input']['data'] = "%s=%s" % (ik, iv)
-                                                    elif isinstance(test['test']['data'], str):
-                                                        item['stages'][0]['input']['data'] = "%s" % (test['test']['data'])
-                                                    item['stages'][0]['input']['uri'] = "/post"
-                                                if self.current_testdata['phase_methods'][phase].lower() == "get":
-                                                    if isinstance(test['test']['data'], dict):
-                                                        ik, iv = list(test['test']['data'].items())[0]
-                                                        item['stages'][0]['input']['uri'] = "/?%s=%s" % (ik, iv)
-                                                # add headers if there are
-                                                if 'input' in test['test']:
-                                                    if 'headers' in test['test']['input']:
-                                                        for h in test['test']['input']['headers']:
-                                                            item['stages'][0]['input']['headers'][h['name']] = h['value']
-                                                    if 'encoded_request' in test['test']['input']:
-                                                        item['stages'][0]['input']['encoded_request'] = test['test']['input']['encoded_request']
-                                                item['stages'][0]['output']['log']['expect_ids'].append(self.currid)
-                                                self.testcontent['tests'].append(item)
-                                                testcnt += 1
-                                # if no testdata
-                                if self.testcontent == {}:
-                                    print("No testdata for TARGET")
-                                    sys.exit(1)
-                                else:
-                                    fname = self.current_confdata['testfile'].replace(".yaml", "") + "_%d.yaml" % (self.currid)
-                                    self.writetest(fname, self.testcontent)
-                                    print("testfile written: %s" % (fname))
-                                    self.testcontent = {}
-                            if directives_defined:
-                                self.currid = last_id  # next ids start
-                            self.currid += 1
+                                # create a test if testfile was given
+                                if self.current_confdata['testfile'] is not None:
+                                    testcnt = 1
+                                    for ck in c:
+                                        if 'targets' in self.current_testdata:
+                                            for test in self.current_testdata['targets']:
+                                                if ck == '' or test['target'] == ck:
+                                                    # first colkey which matches in the list
+                                                    # create a test object
+                                                    if self.testcontent == {}:
+                                                        self.testcontent = copy.deepcopy(self.testdict['header'])
+                                                        self.testcontent['meta']['name'] = self.current_confdata['testfile']
+                                                    item = copy.deepcopy(self.testdict['item'])
+                                                    item['test_title'] = "%d-%d" % (self.currid, testcnt)
+                                                    item['ruleid'] = self.currid
+                                                    item['test_id'] = testcnt
+                                                    item['desc'] = "Test case for rule %d, #%d" % (self.currid, testcnt)
+                                                    item['stages'][0]['description'] = "Send request"
+                                                    item['stages'][0]['input']['method'] = self.current_confdata['phase_methods'][phase].upper()
+                                                    if self.current_testdata['phase_methods'][phase].lower() == "post":
+                                                        if isinstance(test['test']['data'], dict):
+                                                            ik, iv = list(test['test']['data'].items())[0]
+                                                            item['stages'][0]['input']['data'] = "%s=%s" % (ik, iv)
+                                                        elif isinstance(test['test']['data'], str):
+                                                            item['stages'][0]['input']['data'] = "%s" % (test['test']['data'])
+                                                        item['stages'][0]['input']['uri'] = "/post"
+                                                    if self.current_testdata['phase_methods'][phase].lower() == "get":
+                                                        if isinstance(test['test']['data'], dict):
+                                                            ik, iv = list(test['test']['data'].items())[0]
+                                                            item['stages'][0]['input']['uri'] = "/?%s=%s" % (ik, iv)
+                                                    # add headers if there are
+                                                    if 'input' in test['test']:
+                                                        if 'headers' in test['test']['input']:
+                                                            for h in test['test']['input']['headers']:
+                                                                item['stages'][0]['input']['headers'][h['name']] = h['value']
+                                                        if 'encoded_request' in test['test']['input']:
+                                                            item['stages'][0]['input']['encoded_request'] = test['test']['input']['encoded_request']
+                                                    item['stages'][0]['output']['log']['expect_ids'].append(self.currid)
+                                                    self.testcontent['tests'].append(item)
+                                                    testcnt += 1
+                                    # if no testdata
+                                    if self.testcontent == {}:
+                                        print("No testdata for TARGET")
+                                        sys.exit(1)
+                                    else:
+                                        fname = self.current_confdata['testfile'].replace(".yaml", "") + "_%d.yaml" % (self.currid)
+                                        self.writetest(fname, self.testcontent)
+                                        print("testfile written: %s" % (fname))
+                                        self.testcontent = {}
+                                if directives_defined:
+                                    self.currid = last_id  # next ids start
+                                self.currid += 1
 
     def parseactions(self, action):
         """From a list of actions as str, return a single str for inclusion in the template"""
@@ -365,8 +365,7 @@ class RuleGenerator(object):
         return objacts + "\""
 
 
-class ComplexSeparatorTemplate(string.Template):
-    """Class to replace the default delimiter to ${...}$ for variables in templates"""
+class RuleGeneratorTemplate(string.Template):
     pattern = r'''
     \${(?:
        (?P<escaped>\$) |               
@@ -376,9 +375,6 @@ class ComplexSeparatorTemplate(string.Template):
     )
     '''
 
-
-
-class IncrementingIdTemplate(string.Template):
     def __init__(self, template):
         super().__init__(template)
         self.last_id = 0
@@ -386,7 +382,7 @@ class IncrementingIdTemplate(string.Template):
     def get_last_id(self):
         return self.last_id
 
-    def substitute(self, *args, **kwargs):
+    def directive_substitute(self, **kwargs):
         """Increments CURRID before each substitution for macros in directives"""
         def incrementing_substitution(match):
             var_name = match.group('named')
@@ -399,7 +395,7 @@ class IncrementingIdTemplate(string.Template):
             else:
                 return match.group(0)
 
-        return self.pattern.sub(incrementing_substitution, self.template)
+        return re.compile(self.pattern).sub(incrementing_substitution, self.template)
 
 
 if __name__ == "__main__":
