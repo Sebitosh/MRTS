@@ -21,16 +21,17 @@ class RuleGenerator(object):
         self.currid           = self.baseid
         self.templates        = []
         self.templates_dict   = {}
-        self.default_oprator  = "@rx"
+        self.default_operator  = "@rx"
         self.confdata         = {
             'target'       : None,
             'rulefile'     : None,
             'testfile'     : None,
             'templates'    : [],
             'colkey'       : [],
-            'operator'     : self.default_oprator,
+            'operator'     : self.default_operator,
             'oparg'        : "attack",
             'phase'        : [1,2,3,4],
+            'actions'      : [],
             'phase_methods': {}
         }
         self.default_test_phase_methods = {
@@ -179,86 +180,107 @@ class RuleGenerator(object):
         # current rule id
         tpldict['currid'] = self.currid
 
+        # optional actions macro
+        actions_defined = 'actions' in tpldict
+        if not actions_defined:
+            tpldict['actions'] = [None]  # dummy but iterable value
+
         # iterate loops through possible combinations of arguments
-        # which are 'colkey', 'operator', 'oparg' and 'phase'
-        # this 4 loop produces the combinations
-        for c in tpldict['colkey']:
-            for op in tpldict['operator']:
-                for oparg in tpldict['oparg']:
-                    for phase in tpldict['phase']:
-                        tdict = copy.deepcopy(tpldict)
-                        if len(c) > 1:
-                            tdict['target'] = "|".join(["%s:%s" % (tpldict['target'], ck) for ck in c])
-                        elif len(c) == 1 and c[0] != '':
-                            tdict['target'] = "%s:%s" % (tpldict['target'], c[0])
-                        else:
-                            tdict['target'] = "%s" % (tpldict['target'])
-                        tdict['operator'] = op
-                        tdict['oparg'] = oparg
-                        tdict['phase'] = phase
-                        td = {}
-                        for k in tdict:
-                            td[k.upper()] = tdict[k]
-                        td['CURRID'] = self.currid
-                        rule = ruletpl.substitute(**td) + "\n"
-                        self.content += rule
-
-                        # create a test if testfile was given
-                        if self.current_confdata['testfile'] is not None:
-                            testcnt = 1
-                            for ck in c:
-                                if 'targets' in self.current_testdata:
-                                    for test in self.current_testdata['targets']:
-                                        if ck == '' or test['target'] == ck:
-                                            # first colkey which matches in the list
-                                            # create a test object
-                                            if self.testcontent == {}:
-                                                self.testcontent = copy.deepcopy(self.testdict['header'])
-                                                self.testcontent['meta']['name'] = self.current_confdata['testfile']
-                                            item = copy.deepcopy(self.testdict['item'])
-                                            item['test_title'] = "%d-%d" % (self.currid, testcnt)
-                                            item['ruleid'] = self.currid
-                                            item['test_id'] = testcnt
-                                            item['desc'] = "Test case for rule %d, #%d" % (self.currid, testcnt)
-                                            item['stages'][0]['description'] = "Send request"
-                                            item['stages'][0]['input']['method'] = self.current_confdata['phase_methods'][phase].upper()
-                                            if self.current_testdata['phase_methods'][phase].lower() == "post":
-                                                if isinstance(test['test']['data'], dict):
-                                                    ik, iv = list(test['test']['data'].items())[0]
-                                                    item['stages'][0]['input']['data'] = "%s=%s" % (ik, iv)
-                                                elif isinstance(test['test']['data'], str):
-                                                    item['stages'][0]['input']['data'] = "%s" % (test['test']['data'])
-                                                item['stages'][0]['input']['uri'] = "/post"
-                                            if self.current_testdata['phase_methods'][phase].lower() == "get":
-                                                if isinstance(test['test']['data'], dict):
-                                                    ik, iv = list(test['test']['data'].items())[0]
-                                                    item['stages'][0]['input']['uri'] = "/?%s=%s" % (ik, iv)
-                                            # add headers if there are
-                                            if 'input' in test['test']:
-                                                if 'headers' in test['test']['input']:
-                                                    for h in test['test']['input']['headers']:
-                                                        item['stages'][0]['input']['headers'][h['name']] = h['value']
-                                                if 'encoded_request' in test['test']['input']:
-                                                    item['stages'][0]['input']['encoded_request'] = test['test']['input']['encoded_request']
-                                            item['stages'][0]['output']['log']['expect_ids'].append(self.currid)
-                                            self.testcontent['tests'].append(item)
-                                            testcnt += 1
-                            # if no testdata
-                            if self.testcontent == {}:
-                                print("No testdata for TARGET")
-                                sys.exit(1)
+        # mandatory arguments are 'colkey', 'operator', 'oparg' and 'phase'
+        # optional arguments are 'actions'
+        # this 5 loop produces the combinations
+        for action in tpldict['actions']:
+            for c in tpldict['colkey']:
+                for op in tpldict['operator']:
+                    for oparg in tpldict['oparg']:
+                        for phase in tpldict['phase']:
+                            tdict = copy.deepcopy(tpldict)
+                            if len(c) > 1:
+                                tdict['target'] = "|".join(["%s:%s" % (tpldict['target'], ck) for ck in c])
+                            elif len(c) == 1 and c[0] != '':
+                                tdict['target'] = "%s:%s" % (tpldict['target'], c[0])
                             else:
-                                fname = self.current_confdata['testfile'].replace(".yaml", "") + "_%d.yaml" % (self.currid)
-                                self.writetest(fname, self.testcontent)
-                                print("testfile written: %s" % (fname))
-                                self.testcontent = {}
+                                tdict['target'] = "%s" % (tpldict['target'])
+                            tdict['operator'] = op
+                            tdict['oparg'] = oparg
+                            tdict['phase'] = phase
+                            if actions_defined:
+                                tdict['actions'] = self.parseactions(action['action'])
 
-                        self.currid += 1
+                            td = {}
+                            for k in tdict:
+                                td[k.upper()] = tdict[k]
+                            td['CURRID'] = self.currid
+                            rule = ruletpl.substitute(**td) + "\n"
+                            self.content += rule
+
+                            # create a test if testfile was given
+                            if self.current_confdata['testfile'] is not None:
+                                testcnt = 1
+                                for ck in c:
+                                    if 'targets' in self.current_testdata:
+                                        for test in self.current_testdata['targets']:
+                                            if ck == '' or test['target'] == ck:
+                                                # first colkey which matches in the list
+                                                # create a test object
+                                                if self.testcontent == {}:
+                                                    self.testcontent = copy.deepcopy(self.testdict['header'])
+                                                    self.testcontent['meta']['name'] = self.current_confdata['testfile']
+                                                item = copy.deepcopy(self.testdict['item'])
+                                                item['test_title'] = "%d-%d" % (self.currid, testcnt)
+                                                item['ruleid'] = self.currid
+                                                item['test_id'] = testcnt
+                                                item['desc'] = "Test case for rule %d, #%d" % (self.currid, testcnt)
+                                                item['stages'][0]['description'] = "Send request"
+                                                item['stages'][0]['input']['method'] = self.current_confdata['phase_methods'][phase].upper()
+                                                if self.current_testdata['phase_methods'][phase].lower() == "post":
+                                                    if isinstance(test['test']['data'], dict):
+                                                        ik, iv = list(test['test']['data'].items())[0]
+                                                        item['stages'][0]['input']['data'] = "%s=%s" % (ik, iv)
+                                                    elif isinstance(test['test']['data'], str):
+                                                        item['stages'][0]['input']['data'] = "%s" % (test['test']['data'])
+                                                    item['stages'][0]['input']['uri'] = "/post"
+                                                if self.current_testdata['phase_methods'][phase].lower() == "get":
+                                                    if isinstance(test['test']['data'], dict):
+                                                        ik, iv = list(test['test']['data'].items())[0]
+                                                        item['stages'][0]['input']['uri'] = "/?%s=%s" % (ik, iv)
+                                                # add headers if there are
+                                                if 'input' in test['test']:
+                                                    if 'headers' in test['test']['input']:
+                                                        for h in test['test']['input']['headers']:
+                                                            item['stages'][0]['input']['headers'][h['name']] = h['value']
+                                                    if 'encoded_request' in test['test']['input']:
+                                                        item['stages'][0]['input']['encoded_request'] = test['test']['input']['encoded_request']
+                                                item['stages'][0]['output']['log']['expect_ids'].append(self.currid)
+                                                self.testcontent['tests'].append(item)
+                                                testcnt += 1
+                                # if no testdata
+                                if self.testcontent == {}:
+                                    print("No testdata for TARGET")
+                                    sys.exit(1)
+                                else:
+                                    fname = self.current_confdata['testfile'].replace(".yaml", "") + "_%d.yaml" % (self.currid)
+                                    self.writetest(fname, self.testcontent)
+                                    print("testfile written: %s" % (fname))
+                                    self.testcontent = {}
+
+                            self.currid += 1
+
+    def parseactions(self, action):
+        """From a list of actions as str, return a single str for inclusion in the template"""
+        res = ""
+        for i in range(len(action)):
+            if i == len(action) - 1:
+                res += action[i]
+            else:
+                res += action[i] + ",\\\n" + self.indent
+
+        return res
 
     def genobject(self, o):
-        """generat an object, eg. 'secrule' or 'secaction'"""
+        """generate an object, eg. 'secrule' or 'secaction'"""
         obj = ""
-        objacts = ""
+        objects = ""
         if o['object'].lower() == "secaction":
             obj += "SecAction \\\n"
 
@@ -268,9 +290,9 @@ class RuleGenerator(object):
         if o['object'].lower() in ["secaction", "secrule"]:
             self.indentdepth += 1
             if 'actions' in o:
-                objacts = self.buildactions(o['actions'])
+                objects = self.buildactions(o['actions'])
             self.indentdepth -= 1
-        self.content += obj + objacts + "\n\n"
+        self.content += obj + objects + "\n\n"
 
     def writeconf(self, obj):
         """write the generated content"""

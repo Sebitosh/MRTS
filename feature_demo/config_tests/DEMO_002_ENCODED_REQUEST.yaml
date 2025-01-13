@@ -1,6 +1,6 @@
 target: ARGS
-rulefile: DEMO_MRTS_002_ENCODED_REQUEST.conf
-testfile: DEMO_MRTS_002_ENCODED_REQUEST.yaml
+rulefile: DEMO_002_ENCODED_REQUEST.conf
+testfile: DEMO_002_ENCODED_REQUEST.yaml
 templates:
 - SecRule for TARGETS
 colkey:

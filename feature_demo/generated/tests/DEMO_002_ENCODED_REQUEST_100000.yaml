@@ -2,7 +2,7 @@
 meta:
   author: MRTS generate-rules.py
   enabled: true
-  name: DEMO_MRTS_002_ENCODED_REQUEST.yaml
+  name: DEMO_002_ENCODED_REQUEST.yaml
   description: Desc
 tests:
 - test_title: 100000-1
