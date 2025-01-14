@@ -35,5 +35,16 @@ global:
           ${ACTIONS}$,\
           msg:'%{MATCHED_VAR_NAME} was caught in phase:${PHASE}$',\
           ver:'${VERSION}$'"
+  - name: "Directives demo template"
+    template: |
+      SecRule ${TARGET}$ "${OPERATOR}$ ${OPARG}$" \
+          "id:${CURRID}$,\
+          phase:${PHASE}$,\
+          t:none,\
+          log,\
+          msg:'%{MATCHED_VAR_NAME} was caught in phase:${PHASE}$',\
+          ver:'${VERSION}$'"
+      
+      ${DIRECTIVES}$
   default_tests_phase_methods:
   - 2: post
