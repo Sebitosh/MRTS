@@ -8,6 +8,7 @@ import os.path
 import string
 import re
 import copy
+from ast import literal_eval
 
 NAME = "MRTS"
 VERSION = "0.1"
@@ -33,6 +34,7 @@ class RuleGenerator(object):
             'phase'        : [1,2,3,4],
             'actions'      : [],
             'directives'   : [],
+            'constants'    : {},
             'phase_methods': {}
         }
         self.default_test_phase_methods = {
@@ -42,6 +44,8 @@ class RuleGenerator(object):
             4: "post",
             5: "post"
         }
+
+        self.default_constants = {}
 
         self.current_confdata = {}
         self.current_testdata = {}
@@ -54,6 +58,7 @@ class RuleGenerator(object):
         self.testcontent      = {}
 
         self.re_tplvars  = re.compile(r"""\$\{[^ \n\t$,'"]*\}\$""")
+        self.re_constants = re.compile(r"""~\{([^ \n\t$,'"]*)\}~""")
 
         self.testdict         = {
             'header': {
@@ -115,6 +120,10 @@ class RuleGenerator(object):
 
     def parseconf(self, c):
         """parsing a configuration file"""
+        # Before anything, load and replace constants for the current file.
+        if re.search(self.re_constants, str(c)) is not None:
+            c = self.parseconstants(c)
+
         # if there is a 'global' section, fill the possible global vars
         if 'global' in c:
             for k in c['global']:
@@ -155,6 +164,45 @@ class RuleGenerator(object):
             self.writeconf(self.content)
         else:
             pass
+
+    def parseconstants(self, c):
+        """Load and replace any used constants in current configuration"""
+        # per-file local
+        if 'constants' in c:
+            self.current_confdata['constants'] = c['constants']
+        # cross-file global
+        if 'global' in c:
+            if 'default_constants' in c['global']:
+                self.default_constants = c['global']['default_constants']
+            else:  # if no global constants, reset values defined under previous 'global' field
+                self.default_constants = {}
+        return self.swap_constants(c)
+
+    def swap_constants(self, c):
+        if isinstance(c, dict):
+            for key, val in c.items():
+                c[key] = self.swap_constants(val)
+        if isinstance(c, list):
+            for i in range(len(c)):
+                c[i] = self.swap_constants(c[i])
+        if isinstance(c, str):
+            matches = re.findall(self.re_constants, c)
+            for match in matches:
+                if match in self.current_confdata['constants']:
+                    og_type = type(self.current_confdata['constants'][match])
+                    c = c.replace(f"~{{{match}}}~", str(self.current_confdata['constants'][match]))
+                    if og_type in (list, dict):
+                        c = literal_eval(c)
+                    else:
+                        c = og_type(c)
+                elif match in self.default_constants:
+                    og_type = type(self.default_constants[match])
+                    c = c.replace(f"~{{{match}}}~", str(self.default_constants[match]))
+                    if og_type in (list, dict):
+                        c = literal_eval(c)
+                    else:
+                        c = og_type(c)
+        return c
 
     def genrulefromtemplate(self, tpl, current_confdata):
         """

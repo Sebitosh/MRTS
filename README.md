@@ -454,7 +454,103 @@ The field `input.encoded_request` allows defining a whole request encoded in bas
               encoded_request: R0VUIC8gSFRUUC8xLjENCkhvc3Q6IGxvY2FsaG9zdA0KDQo=
 ```
 
-### output / additional checks
+### Constants
+The yaml schema has a mechanism to handle global and local constants.
+
+~~~yaml
+global:
+  default_constants:
+    one: 1
+    TWO: 2
+    two_in_list:
+      - 2
+    FOO_IN_DICT:
+      foo: attack
+...
+
+constants:
+  HEADERS_IN_DICTIONARY:
+    headers:
+      - name: test
+        value: test
+      - name: one
+        value: ~{one}~
+      - name: 2
+        value: ~{TWO}~
+  template_in_list:
+    - SecRule for TARGETS
+    - Template with constants
+  one: one
+~~~
+
+Global constants are defined under the `global.default_constants` field. They are accessible across files and are reset whenever a new `global` field is defined.
+
+Local constants are defined under a `constants` field at the root of a file. They are only accessible in the file they are defined in.
+
+#### Syntax
+Constants are defined as key-value pairs where:
+
+~~~yaml
+NAME: VALUE
+~~~
+
+The name is used for referencing the constant and the value is used for the substitution. Referencing a constant can be done inside the value of any other key in the API. References use the `~{...}~` separators like so:
+
+~~~yaml
+~{NAME}~
+~~~
+
+Variable names can be lower or upper case and are case sensitive.
+
+#### Properties
+
+Constants can be yaml scalars, lists, or dictionaries:
+
+~~~yaml
+scalar: 1
+list:
+  - 1
+dictionary:
+  1: 1
+~~~
+
+Constants can reference other constants in their values:
+
+~~~yaml
+headers:
+  - name: one
+    value: ~{one}~
+  - name: two
+    value: ~{TWO}~
+~~~
+
+Local constants with the same name as global constants have precedence in their local scope:
+~~~yaml
+global:
+  default_constants:
+    ONE: 1
+...
+constants:
+  ONE: one
+...
+key: ~{ONE}~  # substituted by 'one'
+~~~
+Values can contain multiple references, such as in templates:
+
+~~~yaml
+  - name: "Template with constants"
+    template: |
+      SecRule ~{target}~ "${OPERATOR}$ ${OPARG}$" \
+          "id:${CURRID}$,\
+          phase:${PHASE}$,\
+          deny,\
+          t:~{None}~,\
+          log,\
+          msg:'%{MATCHED_VAR_NAME} was caught in phase:${PHASE}$',\
+          ver:'~{VERSION}~'"
+~~~
+
+### Output / additional checks
 
 By default, the generator will produce checks for tests with `go-ftw`'s `expect_ids` field using the current rule id as parameter. If the associated rule matches and it's id put in the log, the test will pass.
 
