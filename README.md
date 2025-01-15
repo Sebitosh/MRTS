@@ -454,6 +454,60 @@ The field `input.encoded_request` allows defining a whole request encoded in bas
               encoded_request: R0VUIC8gSFRUUC8xLjENCkhvc3Q6IGxvY2FsaG9zdA0KDQo=
 ```
 
+### output / additional checks
+
+By default, the generator will produce checks for tests with `go-ftw`'s `expect_ids` field using the current rule id as parameter. If the associated rule matches and it's id put in the log, the test will pass.
+
+To use additional check methods, the `output` field can be used to redefine this default behavior:
+    
+```yaml
+    targets:
+        - target:
+          test:
+            data:
+              foo: attack
+            output:
+              status: 200
+```
+
+This will use the `status` check. The available checks are ([as of version 2.1.1 of the `go-ftw` yaml schema specs](https://github.com/coreruleset/ftw-tests-schema/blob/main/spec/v2.1.1/ftw.md)):
+* `status` - the expected HTTP status code
+* `response_contains` - a regex match on the response
+* `[no_]log_contains` - a string match on the log
+* `log.[no_]expect_ids` - a list of expected rule ids in the log
+* `log.[no_]match_regex` - a regex match on the log
+* `expect_error` - expect an error from the waf
+
+For a full syntax of:
+```yaml
+          output:
+            status: 200
+            response_contains: HTTP/1.1
+            log_contains: nothing
+            no_log_contains: everything
+            log:
+                expect_ids:
+                    - 123456
+                no_expect_ids:
+                    - 123456
+                match_regex: id[:\s"]*123456
+                no_match_regex: id[:\s"]*123456
+            expect_error: true
+```
+
+To combine the default check on the current rule id with additional checks, the `expect_ids` field must be used in conjunction with the `output` field:
+```yaml
+          output:
+            status: 200
+            log:
+                expect_ids: []
+``` 
+
+This way, the status check will be used in addition to the default rule id check.
+
+Exact properties, syntax, available checks and parameters are dependent on the used version of `go-ftw`. The generator will simply replace what is defined under the `output` field in the corresponding field of the generated test case.
+
+ As described for `go-ftw`,  [if any of the checks fail the test will fail](https://github.com/coreruleset/go-ftw?tab=readme-ov-file#how-log-parsing-works).
 ## Run the tool
 
 To generate the rules and their tests, run the tool:
