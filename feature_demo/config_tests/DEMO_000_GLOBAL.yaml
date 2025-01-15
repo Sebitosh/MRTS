@@ -46,5 +46,26 @@ global:
           ver:'${VERSION}$'"
       
       ${DIRECTIVES}$
+  - name: "Template with constants"
+    template: |
+      SecRule ${TARGET}$ "${OPERATOR}$ ${OPARG}$" \
+          "id:${CURRID}$,\
+          phase:~{phase}~,\
+          deny,\
+          t:~{None}~,\
+          log,\
+          msg:'%{MATCHED_VAR_NAME} was caught in phase:~{phase}~',\
+          ver:'~{VERSION}~'"
   default_tests_phase_methods:
   - 2: post
+  default_constants:
+    one: local constants have precedence
+    TWO: 2
+    two_in_list:
+      - 2
+    FOO_IN_DICT:
+      foo: attack
+constants:
+  phase: ${PHASE}$
+  VERSION: ${VERSION}$
+  None: none
