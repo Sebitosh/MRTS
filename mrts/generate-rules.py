@@ -35,6 +35,7 @@ class RuleGenerator(object):
             'actions'      : [],
             'directives'   : [],
             'constants'    : {},
+            'generation'   : {},
             'phase_methods': {}
         }
         self.default_test_phase_methods = {
@@ -101,7 +102,7 @@ class RuleGenerator(object):
             }
         }
 
-        # walk throug the files and process them
+        # walk through the files and process them
         for f in flist:
             try:
                 with open(f, 'r') as fp:
@@ -215,8 +216,7 @@ class RuleGenerator(object):
         # needs for TARGET:colkey variables
         tplvars = [t.replace("${", "").replace("}$", "").lower() for t in self.re_tplvars.findall(tpl)]
         tplvars.append('colkey')
-
-        ruletpl = RuleGeneratorTemplate(tpl)
+        tplvars.append('generation')
 
         # build a dict for template vars
         tpldict = {}
@@ -225,6 +225,22 @@ class RuleGenerator(object):
                 tpldict[t] = current_confdata[t]
             elif hasattr(self, t):
                 tpldict[t] = getattr(self, t)
+
+        # place before/after each directives to separate templates
+        before_defined = 'before' in tpldict['generation']
+        after_defined = 'after' in tpldict['generation']
+        before_each_defined = 'before_each' in tpldict['generation']
+        after_each_defined = 'after_each' in tpldict['generation']
+        if before_defined:
+            before_tpl = RuleGeneratorTemplate(tpldict['generation']['before'])
+        if after_defined:
+            after_tpl = RuleGeneratorTemplate(tpldict['generation']['after'])
+        if before_each_defined:
+            before_each_tpl = RuleGeneratorTemplate(tpldict['generation']['before_each'])
+        if after_each_defined:
+            after_each_tpl = RuleGeneratorTemplate(tpldict['generation']['after_each'])
+
+        ruletpl = RuleGeneratorTemplate(tpl)
 
         # current rule id
         tpldict['currid'] = self.currid
@@ -238,6 +254,13 @@ class RuleGenerator(object):
         directives_defined = 'directives' in tpldict
         if not directives_defined:
             tpldict['directives'] = [None]  # dummy but iterable
+
+        # add before all directives with CURRID substitution
+        if before_defined:
+            before = before_tpl.ruleid_substitute(increment_id_after_sub=True, **{'CURRID': tpldict['currid']}) + "\n"
+            self.content += before
+            self.currid = before_tpl.get_last_id()
+            tpldict['CURRID'] = self.currid
 
         # iterate loops through possible combinations of arguments
         # mandatory arguments are 'colkey', 'operator', 'oparg' and 'phase'
@@ -268,12 +291,26 @@ class RuleGenerator(object):
                                 for k in tdict:
                                     td[k.upper()] = tdict[k]
                                 td['CURRID'] = self.currid
+
+                                if before_each_defined:
+                                    before_each = before_each_tpl.ruleid_substitute(increment_id_after_sub=True, **td) + "\n"
+                                    self.content += before_each
+                                    self.currid = before_each_tpl.get_last_id()
+                                    td['CURRID'] = self.currid
+
                                 rule = ruletpl.substitute(**td) + "\n"
                                 if directives_defined:
                                     dirtpl = RuleGeneratorTemplate(rule)
-                                    rule = dirtpl.directive_substitute(**td)
+                                    rule = dirtpl.ruleid_substitute(**td)
                                     last_id = dirtpl.get_last_id()
+
                                 self.content += rule
+
+                                if after_each_defined:
+                                    after_each = after_each_tpl.ruleid_substitute(**td) + "\n"
+                                    self.content += after_each
+                                    last_id = after_each_tpl.get_last_id()
+
 
                                 # create a test if testfile was given
                                 if self.current_confdata['testfile'] is not None:
@@ -333,9 +370,14 @@ class RuleGenerator(object):
                                         self.writetest(fname, self.testcontent)
                                         print("testfile written: %s" % (fname))
                                         self.testcontent = {}
-                                if directives_defined:
+                                if directives_defined or after_each_defined:
                                     self.currid = last_id  # next ids start
                                 self.currid += 1
+        # add after all directives with CURRID substitution
+        if after_defined:
+            after = after_tpl.ruleid_substitute(increment_id_after_sub=True, **{'CURRID': self.currid}) + "\n"
+            self.content += after
+            self.currid = after_tpl.get_last_id()
 
     def parseactions(self, action):
         """From a list of actions as str, return a single str for inclusion in the template"""
@@ -439,14 +481,19 @@ class RuleGeneratorTemplate(string.Template):
     def get_last_id(self):
         return self.last_id
 
-    def directive_substitute(self, **kwargs):
-        """Increments CURRID before each substitution for macros in directives"""
+    def ruleid_substitute(self, increment_id_after_sub=False, **kwargs):
+        """Increments CURRID before or after each substitution for macros"""
         def incrementing_substitution(match):
             var_name = match.group('named')
             if var_name == 'CURRID':
-                kwargs['CURRID'] += 1
-                self.last_id = kwargs['CURRID']
-                return str(kwargs['CURRID'])
+                if increment_id_after_sub:
+                    kwargs['CURRID'] += 1
+                    self.last_id = kwargs['CURRID']
+                    return str(kwargs['CURRID'] - 1)
+                else:  # increment before substitution
+                    kwargs['CURRID'] += 1
+                    self.last_id = kwargs['CURRID']
+                    return str(kwargs['CURRID'])
             elif var_name in kwargs:
                 return str(kwargs[var_name])
             else:

@@ -604,6 +604,79 @@ This way, the status check will be used in addition to the default rule id check
 Exact properties, syntax, available checks and parameters are dependent on the used version of `go-ftw`. The generator will simply replace what is defined under the `output` field in the corresponding field of the generated test case.
 
  As described for `go-ftw`,  [if any of the checks fail the test will fail](https://github.com/coreruleset/go-ftw?tab=readme-ov-file#how-log-parsing-works).
+
+### Before(-each) and After(-each) rule generation additions
+
+Content defined in test configuration files can be added around the default template generation.
+
+~~~yaml
+templates:
+- SecRule for TARGETS
+
+generation:
+  before: |
+    # STRING BEFORE ALL
+    SecAction "id:${CURRID}$,phase:2, pass, setenv:'before=123'"
+  after: |
+    # STRING AFTER ALL
+    SecAction "id:${CURRID}$,phase:2 pass, setenv:'after=789'"
+  before_each: |
+      # STRING BEFORE EACH
+      SecAction "id:${CURRID}$,phase:${PHASE}$, pass, setenv:'before_each=456'"
+  after_each: |
+      # STRING AFTER EACH
+      SecAction "id:${CURRID}$,phase:${PHASE}$, pass, setenv:'after_each=456'"
+...
+~~~
+
+Under the `generation` section, four options exist to surround the generated configurations for the test:
+- `before` Add the content at the beginning of the generated rule file, before any generation of the template.
+- `after` Add the content at the end of the generated rule file, after any generation of the template.
+- `before_each` Add the content before each generated rule using the template.
+- `after_each` Add the content after each generated rule using the template.
+
+Each section can use the `${CURRID}$` macro to guarantee a unique id to each SecRule/SecAction. `before_each` and `after_each` sections can use all other macros used in template generation.
+
+The above example would generate the following rules:
+
+```
+# STRING BEFORE ALL
+SecAction "id:100013,phase:2, pass, setenv:'before=123'"
+
+# STRING BEFORE EACH
+SecAction "id:100014,phase:2, pass, setenv:'before_each=456'"
+
+SecRule ARGS:arg1 "@contains attack" \
+    "id:100015,\
+    phase:2,\
+    deny,\
+    t:none,\
+    log,\
+    msg:'%{MATCHED_VAR_NAME} was caught in phase:2',\
+    ver:'MRTS/0.1'"
+
+# STRING AFTER EACH
+SecAction "id:100016,phase:2, pass, setenv:'after_each=456'"
+
+# STRING BEFORE EACH
+SecAction "id:100017,phase:2, pass, setenv:'before_each=456'"
+
+SecRule ARGS:arg2 "@contains attack" \
+    "id:100018,\
+    phase:2,\
+    deny,\
+    t:none,\
+    log,\
+    msg:'%{MATCHED_VAR_NAME} was caught in phase:2',\
+    ver:'MRTS/0.1'"
+
+# STRING AFTER EACH
+SecAction "id:100019,phase:2, pass, setenv:'after_each=456'"
+
+# STRING AFTER ALL
+SecAction "id:100020,phase:2 pass, setenv:'after=789'"
+```
+
 ## Run the tool
 
 To generate the rules and their tests, run the tool:
