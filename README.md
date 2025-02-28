@@ -63,7 +63,7 @@ This keyword shows that the next block contains global settings.
 
 #### baseid
 
-`baseid` defines the first `id` what a rule can use. Inside the generator increments that for every rule, and that variable is avaluable as `$CURRID` (see later).
+`baseid` defines the first `id` what a rule can use. Inside the generator increments that for every rule, and that variable is avaluable as `${CURRID}$` (see later).
 
 #### default_operator
 
@@ -181,7 +181,7 @@ actions:
       - status:404
 directives:
   - directive: 
-      - SecAction "id:$CURRID,phase:$PHASE, pass, setenv:'123=abc'"
+      - SecAction "id:${CURRID}$,phase:${PHASE}$, pass, setenv:'123=abc'"
 testdata:
   phase_methods:
     1: get
@@ -255,7 +255,7 @@ SecRule ARGS:/^arg_.*$/
 
 ### actions
 
-`actions` are defined for the `$ACTIONS` macro. See this example:
+`actions` are defined for the `${ACTIONS}$` macro. See this example:
 
 ```yaml
 actions:
@@ -317,18 +317,18 @@ SecRule ARGS "@contains attack" \
 ```yaml
 directives:
   - directive:
-      - SecAction "id:$CURRID,phase:$PHASE, pass, setenv:'123=abc'"
-      - SecAction "id:$CURRID,phase:$PHASE, pass, setenv:'456=def'"
+      - SecAction "id:${CURRID}$,phase:${PHASE}$, pass, setenv:'123=abc'"
+      - SecAction "id:${CURRID}$,phase:${PHASE}$, pass, setenv:'456=def'"
   - directive:
-      - SecAction "id:$CURRID,phase:$PHASE, pass, setenv:'789=xyz'"
+      - SecAction "id:${CURRID}$,phase:${PHASE}$, pass, setenv:'789=xyz'"
 ```
-Each `directive` field contains a list of directives to be included in a template. Every `directive` list will be used to generate different combinations of rules. Macros are available and will be replaced with the current combination's value, except for macro `$CURRID` that is instead incremented at each substitution to guarantee a unique id per SecRule/SecAction.
+Each `directive` field contains a list of directives to be included in a template. Every `directive` list will be used to generate different combinations of rules. Macros are available and will be replaced with the current combination's value, except for macro `${CURRID}$` that is instead incremented at each substitution to guarantee a unique id per SecRule/SecAction.
 
 The above example used with this template:
 
 ```yaml
     template: |
-      SecRule ${TARGET}$ "$OPERATOR $OPARG" \
+      SecRule ${TARGET}$ "${OPERATOR}$ ${OPARG}$" \
           "id:${CURRID}$,\
           phase:${PHASE}$,\
           deny,\
