@@ -349,6 +349,8 @@ class RuleGenerator(object):
                                                                 item['stages'][0]['input']['headers'][h['name']] = h['value']
                                                         if 'encoded_request' in test['test']['input']:
                                                             item['stages'][0]['input']['encoded_request'] = test['test']['input']['encoded_request']
+                                                        if 'uri' in test['test']['input']:
+                                                            item['stages'][0]['input']['uri'] = test['test']['input']['uri']
                                                     # overwrite default output field
                                                     if 'output' in test['test']:
                                                         item['stages'][0]['output'] = test['test']['output']

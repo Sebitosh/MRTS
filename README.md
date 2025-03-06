@@ -454,6 +454,25 @@ The field `input.encoded_request` allows defining a whole request encoded in bas
               encoded_request: R0VUIC8gSFRUUC8xLjENCkhvc3Q6IGxvY2FsaG9zdA0KDQo=
 ```
 
+#### Uri
+
+The field `input.uri` allows defining the uri used for the request manually. This is in particular useful for using the `/reflect` endpoint of [albedo](https://github.com/coreruleset/albedo) which allows defining what the server response should be from within the body of the post request that was sent.
+
+```yaml
+  targets:
+    - target: ''
+      test:
+        data: '{"status": 201, "body": "<html>reflected-token</html>"}'
+        input:
+          headers:
+            - name: Content-Type
+              value: application/json
+          uri: '/reflect'
+        output:
+          status: 201
+          response_contains: "reflected-token"
+```
+
 ### Constants
 The yaml schema has a mechanism to handle global and local constants.
 
