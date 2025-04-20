@@ -2,20 +2,20 @@
 meta:
   author: MRTS generate-rules.py
   enabled: true
-  name: MRTS_004_ARGS_GET.yaml
+  name: MRTS_002_ARGS_A-GET.yaml
   description: Desc
 tests:
-- test_title: 100034-1
-  ruleid: 100034
+- test_title: 100000-1
+  ruleid: 100000
   test_id: 1
-  desc: 'Test case for rule 100034, #1'
+  desc: 'Test case for rule 100000, #1'
   stages:
   - description: Send request
     input:
       dest_addr: 127.0.0.1
       port: 80
       protocol: http
-      method: POST
+      method: GET
       headers:
         User-Agent: OWASP MRTS test agent
         Host: localhost
@@ -25,18 +25,18 @@ tests:
     output:
       log:
         expect_ids:
-        - 100034
-- test_title: 100034-2
-  ruleid: 100034
+        - 100000
+- test_title: 100000-2
+  ruleid: 100000
   test_id: 2
-  desc: 'Test case for rule 100034, #2'
+  desc: 'Test case for rule 100000, #2'
   stages:
   - description: Send request
     input:
       dest_addr: 127.0.0.1
       port: 80
       protocol: http
-      method: POST
+      method: GET
       headers:
         User-Agent: OWASP MRTS test agent
         Host: localhost
@@ -46,18 +46,18 @@ tests:
     output:
       log:
         expect_ids:
-        - 100034
-- test_title: 100034-3
-  ruleid: 100034
+        - 100000
+- test_title: 100000-3
+  ruleid: 100000
   test_id: 3
-  desc: 'Test case for rule 100034, #3'
+  desc: 'Test case for rule 100000, #3'
   stages:
   - description: Send request
     input:
       dest_addr: 127.0.0.1
       port: 80
       protocol: http
-      method: POST
+      method: GET
       headers:
         User-Agent: OWASP MRTS test agent
         Host: localhost
@@ -67,18 +67,18 @@ tests:
     output:
       log:
         expect_ids:
-        - 100034
-- test_title: 100034-4
-  ruleid: 100034
+        - 100000
+- test_title: 100000-4
+  ruleid: 100000
   test_id: 4
-  desc: 'Test case for rule 100034, #4'
+  desc: 'Test case for rule 100000, #4'
   stages:
   - description: Send request
     input:
       dest_addr: 127.0.0.1
       port: 80
       protocol: http
-      method: POST
+      method: GET
       headers:
         User-Agent: OWASP MRTS test agent
         Host: localhost
@@ -88,4 +88,4 @@ tests:
     output:
       log:
         expect_ids:
-        - 100034
+        - 100000
