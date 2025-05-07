@@ -368,7 +368,7 @@ class RuleGenerator(object):
                                         print("No testdata for TARGET")
                                         sys.exit(1)
                                     else:
-                                        fname = self.current_confdata['testfile'].replace(".yaml", "") + "_%d.yaml" % (self.currid)
+                                        fname = "%d_" % (self.currid) + self.current_confdata['testfile'].replace(".yaml", "") + ".yaml"
                                         self.writetest(fname, self.testcontent)
                                         print("testfile written: %s" % (fname))
                                         self.testcontent = {}

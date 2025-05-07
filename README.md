@@ -791,16 +791,16 @@ logtype:
 $ ./go-ftw run --config .ftw.apache-mrts.yaml -d generated/tests/regression/tests/
 🛠️ Starting tests!
 🚀 Running go-ftw!
-👉 executing tests in file MRTS_002_ARGS.yaml
-	running 2-1: ✔ passed in 12.842548ms (RTT 54.970028ms)
-	running 2-2: ✔ passed in 12.049459ms (RTT 54.891019ms)
-	running 2-3: ✔ passed in 10.790834ms (RTT 53.365412ms)
-	running 2-4: ✔ passed in 10.695786ms (RTT 53.515826ms)
-👉 executing tests in file MRTS_002_ARGS.yaml
-	running 2-1: ✔ passed in 8.615306ms (RTT 52.334647ms)
-	running 2-2: ✔ passed in 7.64326ms (RTT 52.301444ms)
-	running 2-3: ✔ passed in 8.353395ms (RTT 52.289161ms)
-	running 2-4: ✔ passed in 8.704224ms (RTT 52.993254ms)
+👉 executing tests in file MRTS_002_ARGS_A-GET.yaml
+	running 100000-1: ✔ passed in 4.03606ms (RTT 51.456201ms)
+	running 100000-2: ✔ passed in 2.100709ms (RTT 50.672271ms)
+	running 100000-3: ✔ passed in 3.572981ms (RTT 51.673479ms)
+	running 100000-4: ✔ passed in 2.85232ms (RTT 50.599715ms)
+👉 executing tests in file MRTS_002_ARGS_A-GET.yaml
+	running 100001-1: ✔ passed in 2.102875ms (RTT 50.515938ms)
+	running 100001-2: ✔ passed in 2.188394ms (RTT 50.675838ms)
+	running 100001-3: ✔ passed in 2.013156ms (RTT 50.583605ms)
+	running 100001-4: ✔ passed in 1.750534ms (RTT 50.572695ms)
 ...
 ```
 
