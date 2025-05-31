@@ -1,0 +1,45 @@
+target: TX
+rulefile: MRTS_102_TX.conf
+testfile: MRTS_102_TX.yaml
+templates:
+  - Non-disruptive SecRule for TARGETS
+generation:
+  before: |
+    SecAction "id:${CURRID}$, phase:1, setvar:tx.var_foo='attack'"
+    SecAction "id:${CURRID}$, phase:1, setvar:tx.var2='attack'"
+  before_each: |
+    SecAction "id:${CURRID}$, phase:${PHASE}$, setvar:tx.var1='attack'"
+  after_each: |
+    SecAction "id:${CURRID}$, phase:${PHASE}$, setvar:!tx.var1"
+colkey:
+  - - var1
+  - - var1
+    - var2
+  - - /^var_.*$/
+operator:
+  - '@contains'
+oparg:
+  - attack
+phase:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+testdata:
+  phase_methods:
+    1: get
+    2: post
+    3: post
+    4: post
+    5: post
+  targets:
+    - target: var1
+      test:
+        data: null
+    - target: var2
+      test:
+        data: null
+    - target: /^var_.*$/
+      test:
+        data: null
