@@ -357,7 +357,9 @@ class RuleGenerator(object):
                                                         # if expect_ids is in rewrite, append the current rule id
                                                         if 'log' in item['stages'][0]['output']:
                                                             if 'expect_ids' in item['stages'][0]['output']['log']:
-                                                                item['stages'][0]['output']['log']['expect_ids'].append(self.currid)
+                                                                item['stages'][0]['output']['log']['expect_ids'] = [self.currid]
+                                                            if 'no_expect_ids' in item['stages'][0]['output']['log']:
+                                                                item['stages'][0]['output']['log']['no_expect_ids'] = [self.currid]
                                                     else:
                                                         item['stages'][0]['output']['log']['expect_ids'].append(self.currid)
 
